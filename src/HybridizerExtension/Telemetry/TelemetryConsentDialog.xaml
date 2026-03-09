@@ -1,0 +1,91 @@
+<Window x:Class="HybridizerExtension.Telemetry.TelemetryConsentDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Hybridizer - Help Us Improve"
+        Width="560" Height="480"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        WindowStyle="SingleBorderWindow">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0"
+                   Text="Hybridizer - Help Us Improve"
+                   FontSize="18" FontWeight="SemiBold"
+                   Margin="0,0,0,16" />
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,12">
+                    Hybridizer can collect anonymous usage metrics to help us improve the tool.
+                    Here is exactly what we collect:
+                </TextBlock>
+
+                <TextBlock TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,0,6">
+                    What we collect:
+                </TextBlock>
+                <BulletDecorator Margin="16,0,0,3">
+                    <BulletDecorator.Bullet><Ellipse Width="5" Height="5" Fill="Gray" /></BulletDecorator.Bullet>
+                    <TextBlock TextWrapping="Wrap" Margin="8,0,0,0">Compilation time (how long Hybridizer takes to process your assemblies)</TextBlock>
+                </BulletDecorator>
+                <BulletDecorator Margin="16,0,0,3">
+                    <BulletDecorator.Bullet><Ellipse Width="5" Height="5" Fill="Gray" /></BulletDecorator.Bullet>
+                    <TextBlock TextWrapping="Wrap" Margin="8,0,0,0">Amount of generated code (number of lines and files produced)</TextBlock>
+                </BulletDecorator>
+                <BulletDecorator Margin="16,0,0,3">
+                    <BulletDecorator.Bullet><Ellipse Width="5" Height="5" Fill="Gray" /></BulletDecorator.Bullet>
+                    <TextBlock TextWrapping="Wrap" Margin="8,0,0,0">Code generation time</TextBlock>
+                </BulletDecorator>
+                <BulletDecorator Margin="16,0,0,3">
+                    <BulletDecorator.Bullet><Ellipse Width="5" Height="5" Fill="Gray" /></BulletDecorator.Bullet>
+                    <TextBlock TextWrapping="Wrap" Margin="8,0,0,0">GPU architecture detected</TextBlock>
+                </BulletDecorator>
+                <BulletDecorator Margin="16,0,0,3">
+                    <BulletDecorator.Bullet><Ellipse Width="5" Height="5" Fill="Gray" /></BulletDecorator.Bullet>
+                    <TextBlock TextWrapping="Wrap" Margin="8,0,0,0">Success or failure status of builds</TextBlock>
+                </BulletDecorator>
+
+                <TextBlock TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,16,0,6">
+                    What we DO NOT collect:
+                </TextBlock>
+                <BulletDecorator Margin="16,0,0,3">
+                    <BulletDecorator.Bullet><Ellipse Width="5" Height="5" Fill="Red" /></BulletDecorator.Bullet>
+                    <TextBlock TextWrapping="Wrap" Margin="8,0,0,0" FontWeight="SemiBold">Your source code &#x2014; never, under any circumstances</TextBlock>
+                </BulletDecorator>
+                <BulletDecorator Margin="16,0,0,3">
+                    <BulletDecorator.Bullet><Ellipse Width="5" Height="5" Fill="Red" /></BulletDecorator.Bullet>
+                    <TextBlock TextWrapping="Wrap" Margin="8,0,0,0">File names, project names, or directory paths</TextBlock>
+                </BulletDecorator>
+                <BulletDecorator Margin="16,0,0,3">
+                    <BulletDecorator.Bullet><Ellipse Width="5" Height="5" Fill="Red" /></BulletDecorator.Bullet>
+                    <TextBlock TextWrapping="Wrap" Margin="8,0,0,0">Any personally identifiable information</TextBlock>
+                </BulletDecorator>
+
+                <TextBlock TextWrapping="Wrap" Margin="0,16,0,0">
+                    This data is used solely by Hybridizer to understand usage patterns and improve
+                    the product. It is never shared with any third party.
+                </TextBlock>
+
+                <TextBlock TextWrapping="Wrap" Margin="0,12,0,0" FontStyle="Italic" Foreground="Gray">
+                    You can change this setting at any time in Tools &gt; Options &gt; Hybridizer &gt; Telemetry.
+                </TextBlock>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="No Thanks" Width="110" Height="32" Margin="0,0,12,0"
+                    Click="OnDecline_Click" IsCancel="True" />
+            <Button Content="Enable Telemetry" Width="140" Height="32"
+                    Click="OnAccept_Click" IsDefault="True" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable"
+              xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <Extern href="stdidcmd.h" />
+  <Extern href="vsshlids.h" />
+
+  <Commands package="guidPackage">
+
+    <Menus>
+      <!-- Top-level Hybridizer menu; parented to IDG_VS_MM_TOOLSADDINS
+           which VS 2019+ places under the Extensions menu automatically -->
+      <Menu guid="guidCommandSet" id="HybridizerMenu" priority="0x0700" type="Menu">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_MM_TOOLSADDINS" />
+        <Strings>
+          <ButtonText>Hybridizer</ButtonText>
+        </Strings>
+      </Menu>
+    </Menus>
+
+    <Groups>
+      <!-- Group inside the Hybridizer submenu for commands -->
+      <Group guid="guidCommandSet" id="HybridizerMenuGroup" priority="0x0100">
+        <Parent guid="guidCommandSet" id="HybridizerMenu" />
+      </Group>
+
+      <!-- Group inside the Hybridizer submenu for settings (visual separator) -->
+      <Group guid="guidCommandSet" id="HybridizerSettingsGroup" priority="0x0200">
+        <Parent guid="guidCommandSet" id="HybridizerMenu" />
+      </Group>
+
+      <!-- Group inside project context menu -->
+      <Group guid="guidCommandSet" id="ProjectContextMenuGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE" />
+      </Group>
+    </Groups>
+
+    <Buttons>
+      <!-- Hybridize Project command in the Hybridizer submenu -->
+      <Button guid="guidCommandSet" id="HybridizeProjectCommand" priority="0x0100" type="Button">
+        <Parent guid="guidCommandSet" id="HybridizerMenuGroup" />
+        <Strings>
+          <ButtonText>Hybridize Project</ButtonText>
+        </Strings>
+      </Button>
+
+      <!-- Telemetry Settings command in the Hybridizer submenu -->
+      <Button guid="guidCommandSet" id="TelemetrySettingsCommand" priority="0x0100" type="Button">
+        <Parent guid="guidCommandSet" id="HybridizerSettingsGroup" />
+        <Strings>
+          <ButtonText>Telemetry Settings...</ButtonText>
+        </Strings>
+      </Button>
+
+      <!-- Hybridize Project command in project context menu -->
+      <Button guid="guidCommandSet" id="HybridizeProjectContextCommand" priority="0x0100" type="Button">
+        <Parent guid="guidCommandSet" id="ProjectContextMenuGroup" />
+        <Strings>
+          <ButtonText>Hybridize Project</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
+
+  </Commands>
+
+  <Symbols>
+    <GuidSymbol name="guidPackage" value="{d4a3b5c7-8e9f-4a1b-c2d3-e4f5a6b7c8d9}" />
+
+    <GuidSymbol name="guidCommandSet" value="{a1b2c3d4-e5f6-7890-abcd-ef1234567890}">
+      <IDSymbol name="HybridizerMenu" value="0x1030" />
+      <IDSymbol name="HybridizerMenuGroup" value="0x1035" />
+      <IDSymbol name="HybridizerSettingsGroup" value="0x1036" />
+      <IDSymbol name="ProjectContextMenuGroup" value="0x1040" />
+      <IDSymbol name="HybridizeProjectCommand" value="0x0100" />
+      <IDSymbol name="HybridizeProjectContextCommand" value="0x0101" />
+      <IDSymbol name="TelemetrySettingsCommand" value="0x0102" />
+    </GuidSymbol>
+  </Symbols>
+
+</CommandTable>

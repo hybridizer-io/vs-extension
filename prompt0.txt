@@ -1,0 +1,17 @@
+Look at those nuget packages : 
+- Hybridizer.Runtime.CUDAImports
+- Hybridizer
+- Hybridizer.App.Template 
+
+You can find the source in /mnt/d/hybridizer-software-suite/dotnet-tool and in /mnt/d/hybridizer-runtime-cudaimports
+
+I want you to design a visual studio extension with the following features : 
+- installs the three above packages as dependencies
+- vs 2022 and up support
+- a "activate telemetry" at first start, opt-in, stating that we "Hybridizer" won't ever send code by itself but only metrics to understand usage (compilation time, amount of generated code, generation time, …) and that these data won't be shared with anyone. Be as clear as possible to let no ambiguity
+- telemetry can be deactivated anytime in the visual studio UI
+- when activated, it sets something (registry or environment variable) I can read from actual binaries to send data when it is turned on
+- new hybridizer project button (should be the case as soon as Hybridizer.App.Template is installed)
+- hybridize project button, which creates the directory.build and directory.targets and instruct user about further steps if they can't be automated
+
+First think of a plan and detail that is a text document in this directory
