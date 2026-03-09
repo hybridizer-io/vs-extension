@@ -179,7 +179,7 @@ namespace HybridizerExtension.Commands
             }
         }
 
-        private bool AddCudaImportsReference(string csprojPath)
+        internal bool AddCudaImportsReference(string csprojPath)
         {
             try
             {
@@ -223,7 +223,7 @@ namespace HybridizerExtension.Commands
             }
         }
 
-        private string ReadEmbeddedResource(string resourceName)
+        internal static string ReadEmbeddedResource(string resourceName)
         {
             var assembly = Assembly.GetExecutingAssembly();
             using (var stream = assembly.GetManifestResourceStream(resourceName))
