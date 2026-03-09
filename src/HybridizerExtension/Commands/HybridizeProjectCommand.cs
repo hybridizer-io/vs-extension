@@ -22,13 +22,8 @@ namespace HybridizerExtension.Commands
         {
             _package = package;
 
-            // Register command in Hybridizer submenu
-            var menuCommandId = new CommandID(CommandIds.CommandSetGuid, CommandIds.HybridizeProjectCommandId);
-            var menuItem = new MenuCommand(Execute, menuCommandId);
-            commandService.AddCommand(menuItem);
-
             // Register command in project context menu
-            var contextCommandId = new CommandID(CommandIds.CommandSetGuid, 0x0101);
+            var contextCommandId = new CommandID(CommandIds.CommandSetGuid, CommandIds.HybridizeProjectContextCommandId);
             var contextItem = new MenuCommand(Execute, contextCommandId);
             commandService.AddCommand(contextItem);
         }

@@ -19,13 +19,8 @@
     </Menus>
 
     <Groups>
-      <!-- Group inside the Hybridizer submenu for commands -->
+      <!-- Group inside the Hybridizer submenu -->
       <Group guid="guidCommandSet" id="HybridizerMenuGroup" priority="0x0100">
-        <Parent guid="guidCommandSet" id="HybridizerMenu" />
-      </Group>
-
-      <!-- Group inside the Hybridizer submenu for settings (visual separator) -->
-      <Group guid="guidCommandSet" id="HybridizerSettingsGroup" priority="0x0200">
         <Parent guid="guidCommandSet" id="HybridizerMenu" />
       </Group>
 
@@ -36,23 +31,15 @@
     </Groups>
 
     <Buttons>
-      <!-- Hybridize Project command in the Hybridizer submenu -->
-      <Button guid="guidCommandSet" id="HybridizeProjectCommand" priority="0x0100" type="Button">
-        <Parent guid="guidCommandSet" id="HybridizerMenuGroup" />
-        <Strings>
-          <ButtonText>Hybridize Project</ButtonText>
-        </Strings>
-      </Button>
-
       <!-- Telemetry Settings command in the Hybridizer submenu -->
       <Button guid="guidCommandSet" id="TelemetrySettingsCommand" priority="0x0100" type="Button">
-        <Parent guid="guidCommandSet" id="HybridizerSettingsGroup" />
+        <Parent guid="guidCommandSet" id="HybridizerMenuGroup" />
         <Strings>
           <ButtonText>Telemetry Settings...</ButtonText>
         </Strings>
       </Button>
 
-      <!-- Hybridize Project command in project context menu -->
+      <!-- Hybridize Project command in project context menu only -->
       <Button guid="guidCommandSet" id="HybridizeProjectContextCommand" priority="0x0100" type="Button">
         <Parent guid="guidCommandSet" id="ProjectContextMenuGroup" />
         <Strings>
@@ -69,9 +56,7 @@
     <GuidSymbol name="guidCommandSet" value="{a1b2c3d4-e5f6-7890-abcd-ef1234567890}">
       <IDSymbol name="HybridizerMenu" value="0x1030" />
       <IDSymbol name="HybridizerMenuGroup" value="0x1035" />
-      <IDSymbol name="HybridizerSettingsGroup" value="0x1036" />
       <IDSymbol name="ProjectContextMenuGroup" value="0x1040" />
-      <IDSymbol name="HybridizeProjectCommand" value="0x0100" />
       <IDSymbol name="HybridizeProjectContextCommand" value="0x0101" />
       <IDSymbol name="TelemetrySettingsCommand" value="0x0102" />
     </GuidSymbol>

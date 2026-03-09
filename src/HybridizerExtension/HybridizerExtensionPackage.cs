@@ -34,7 +34,7 @@ namespace HybridizerExtension
                 ShowTelemetryConsentDialog();
             }
 
-            CheckTemplateInstallationAsync().Forget();
+            CheckPrerequisitesAsync().Forget();
         }
 
         private async Task RegisterTelemetrySettingsCommandAsync()
@@ -63,18 +63,23 @@ namespace HybridizerExtension
             TelemetrySettings.SetEnvironmentVariable();
         }
 
-        private async Task CheckTemplateInstallationAsync()
+        internal async Task RetryPrerequisitesAsync()
         {
-            bool installed = await Task.Run(() => TemplateChecker.IsHybridizerTemplateInstalled());
+            await CheckPrerequisitesAsync();
+        }
 
-            if (!installed)
+        private async Task CheckPrerequisitesAsync()
+        {
+            var failures = await PrerequisiteInstaller.EnsureAllInstalledAsync();
+
+            if (failures.Count > 0)
             {
                 await JoinableTaskFactory.SwitchToMainThreadAsync();
-                ShowTemplateInfoBar();
+                ShowPrerequisiteInfoBar(failures);
             }
         }
 
-        private void ShowTemplateInfoBar()
+        private void ShowPrerequisiteInfoBar(System.Collections.Generic.List<string> failures)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -84,19 +89,19 @@ namespace HybridizerExtension
             shell.GetProperty((int)__VSSPROPID7.VSSPROPID_MainWindowInfoBarHost, out var obj);
             if (obj is IVsInfoBarHost host)
             {
+                string failedCommands = string.Join(", ", failures);
                 var textSpans = new[]
                 {
-                    new InfoBarTextSpan("Hybridizer project template not found. Run: "),
-                    new InfoBarTextSpan("dotnet new install Hybridizer.App.Template"),
-                    new InfoBarTextSpan(" to enable the 'New Hybridizer Project' option.")
+                    new InfoBarTextSpan("Hybridizer: some prerequisites could not be installed automatically. Please run manually: "),
+                    new InfoBarTextSpan(failedCommands)
                 };
 
                 var actionItems = new[]
                 {
-                    new InfoBarHyperlink("Install Now")
+                    new InfoBarHyperlink("Retry")
                 };
 
-                var infoBar = new InfoBarModel(textSpans, actionItems, KnownMonikers.StatusInformation, isCloseButtonVisible: true);
+                var infoBar = new InfoBarModel(textSpans, actionItems, KnownMonikers.StatusWarning, isCloseButtonVisible: true);
 
                 var factory = GetService(typeof(SVsInfoBarUIFactory)) as IVsInfoBarUIFactory;
                 if (factory == null) return;
@@ -104,7 +109,7 @@ namespace HybridizerExtension
                 var element = factory.CreateInfoBar(infoBar);
                 if (element != null)
                 {
-                    var events = new TemplateInfoBarEvents(this);
+                    var events = new PrerequisiteInfoBarEvents(this);
                     element.Advise(events, out _);
                     host.AddInfoBar(element);
                 }
@@ -112,11 +117,11 @@ namespace HybridizerExtension
         }
     }
 
-    internal class TemplateInfoBarEvents : IVsInfoBarUIEvents
+    internal class PrerequisiteInfoBarEvents : IVsInfoBarUIEvents
     {
-        private readonly AsyncPackage _package;
+        private readonly HybridizerExtensionPackage _package;
 
-        public TemplateInfoBarEvents(AsyncPackage package)
+        public PrerequisiteInfoBarEvents(HybridizerExtensionPackage package)
         {
             _package = package;
         }
@@ -128,10 +133,10 @@ namespace HybridizerExtension
         public void OnActionItemClicked(IVsInfoBarUIElement infoBarUIElement, IVsInfoBarActionItem actionItem)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            if (actionItem.Text == "Install Now")
+            if (actionItem.Text == "Retry")
             {
-                _ = TemplateChecker.InstallTemplateAsync(_package);
                 infoBarUIElement.Close();
+                _package.RetryPrerequisitesAsync().Forget();
             }
         }
     }
