@@ -4,31 +4,120 @@
     <LoadVisualStudio></LoadVisualStudio>
   </PropertyGroup>
 
+  <!--
+    Picks the C++ host compiler nvcc runs with on Windows.
+
+    nvcc refuses an MSVC newer than its CUDA release knows: CUDA 13.0 stops
+    below _MSC_VER 1950, so it takes the VS 2022 toolset (14.4x) but not the
+    one VS 2026 installs by default (14.5x). The newest Visual Studio is
+    therefore not always usable, even when the build runs inside it.
+
+    The limit is read from $(CUDA_PATH)\include\crt\host_config.h. Every MSVC
+    toolset of every Visual Studio 2022 or later (IDE or Build Tools) is
+    listed, and the newest one under the limit is loaded with
+    vcvarsall -vcvars_ver. With VS 2026 only, the "MSVC v143 - VS 2022 C++
+    x64/x86 build tools" component gives such a toolset.
+
+    Properties a project can set:
+      VcVarsAllBat, VcVarsVer             use this vcvarsall.bat (and toolset)
+                                          instead of looking for one
+      HybridizerAllowUnsupportedCompiler  true: when no toolset is under the
+                                          limit, take the newest one and pass
+                                          -allow-unsupported-compiler to nvcc
+  -->
   <Target Name="DetectVisualStudio" BeforeTargets="GenerateCUDA" Condition="'$(HybridizerEnabled)' == 'true' And '$(OS)' == 'Windows_NT'">
-    <PropertyGroup Condition="'$(VsInstallRoot)' != ''">
-      <VcVarsAllBat>$(VsInstallRoot)\VC\Auxiliary\Build\vcvarsall.bat</VcVarsAllBat>
-      <VsDetectionSource>Visual Studio IDE ($(VsInstallRoot))</VsDetectionSource>
+    <PropertyGroup>
+      <_HybUserVcVars Condition="'$(VcVarsAllBat)' != ''">true</_HybUserVcVars>
+      <_HybHostConfig>$(CUDA_PATH)\include\crt\host_config.h</_HybHostConfig>
+      <_HybHostConfigText Condition="'$(CUDA_PATH)' != '' And Exists('$(_HybHostConfig)')">$([System.IO.File]::ReadAllText('$(_HybHostConfig)'))</_HybHostConfigText>
+      <!-- "#if _MSC_VER < 1920 || _MSC_VER >= 1950" gives 1950 -->
+      <_HybMscVerLimit>$([System.Text.RegularExpressions.Regex]::Match('$(_HybHostConfigText)', '_MSC_VER\s*&lt;\s*\d+\s*\|\|\s*_MSC_VER\s*&gt;=\s*(\d+)').Groups[1].Value)</_HybMscVerLimit>
+      <_HybBestMscVer>0</_HybBestMscVer>
+      <_HybAnyMscVer>0</_HybAnyMscVer>
     </PropertyGroup>
 
-    <Exec Condition="'$(VcVarsAllBat)' == ''"
-          Command="&quot;%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe&quot; -latest -version [17.0, -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath"
+    <Exec Condition="'$(_HybUserVcVars)' != 'true'"
+          Command="&quot;%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe&quot; -all -products * -version [17.0, -property installationPath"
           ConsoleToMSBuild="true"
           StandardOutputImportance="Low"
           StandardErrorImportance="Low"
           IgnoreExitCode="true">
-      <Output TaskParameter="ConsoleOutput" PropertyName="VsWhereInstallPath" />
+      <Output TaskParameter="ConsoleOutput" ItemName="_HybVsRoot" />
     </Exec>
 
-    <PropertyGroup Condition="'$(VcVarsAllBat)' == '' And '$(VsWhereInstallPath)' != ''">
-      <VcVarsAllBat>$(VsWhereInstallPath)\VC\Auxiliary\Build\vcvarsall.bat</VcVarsAllBat>
-      <VsDetectionSource>vswhere ($(VsWhereInstallPath))</VsDetectionSource>
+    <!-- One item per toolset: ...\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe -->
+    <ItemGroup Condition="'$(_HybUserVcVars)' != 'true'">
+      <_HybCl Include="%(_HybVsRoot.Identity)\VC\Tools\MSVC\*\bin\Hostx64\x64\cl.exe" />
+      <_HybCl>
+        <VsRoot>$([System.Text.RegularExpressions.Regex]::Match('%(FullPath)', '^(.*)\\VC\\Tools\\MSVC\\').Groups[1].Value)</VsRoot>
+        <Toolset>$([System.Text.RegularExpressions.Regex]::Match('%(FullPath)', '\\MSVC\\(\d+\.\d+)').Groups[1].Value)</Toolset>
+      </_HybCl>
+      <!-- toolset 14.NN is cl 19.NN, so _MSC_VER is 1900 + NN -->
+      <_HybCl>
+        <MscVer>$([MSBuild]::Add(1900, $([System.Text.RegularExpressions.Regex]::Match('%(Toolset)', '\.(\d+)$').Groups[1].Value)))</MscVer>
+      </_HybCl>
+    </ItemGroup>
+
+    <!-- Toolsets nvcc accepts (no limit found: all of them) -->
+    <ItemGroup>
+      <_HybClOk Include="@(_HybCl)" Condition="'%(MscVer)' != '' And ('$(_HybMscVerLimit)' == '' Or %(MscVer) &lt; $(_HybMscVerLimit))" />
+    </ItemGroup>
+
+    <!-- Newest accepted toolset: the task runs once per toolset, keeping the highest -->
+    <CreateProperty Condition="'%(_HybClOk.MscVer)' != '' And %(_HybClOk.MscVer) &gt; $(_HybBestMscVer)" Value="%(_HybClOk.MscVer)">
+      <Output TaskParameter="Value" PropertyName="_HybBestMscVer" />
+    </CreateProperty>
+    <ItemGroup>
+      <_HybBest Include="@(_HybClOk)" Condition="'%(MscVer)' == '$(_HybBestMscVer)'" />
+    </ItemGroup>
+
+    <!-- Newest toolset of all, used only with HybridizerAllowUnsupportedCompiler -->
+    <CreateProperty Condition="'%(_HybCl.MscVer)' != '' And %(_HybCl.MscVer) &gt; $(_HybAnyMscVer)" Value="%(_HybCl.MscVer)">
+      <Output TaskParameter="Value" PropertyName="_HybAnyMscVer" />
+    </CreateProperty>
+    <ItemGroup>
+      <_HybAny Include="@(_HybCl)" Condition="'%(MscVer)' == '$(_HybAnyMscVer)'" />
+    </ItemGroup>
+
+    <!-- Same toolset in several installs: any of them will do, keep the first -->
+    <PropertyGroup>
+      <_HybBestRoot>@(_HybBest->'%(VsRoot)')</_HybBestRoot>
+      <_HybBestRoot Condition="$(_HybBestRoot.Contains(';'))">$(_HybBestRoot.Split(';')[0])</_HybBestRoot>
+      <_HybBestToolset>@(_HybBest->'%(Toolset)')</_HybBestToolset>
+      <_HybBestToolset Condition="$(_HybBestToolset.Contains(';'))">$(_HybBestToolset.Split(';')[0])</_HybBestToolset>
+      <_HybAnyRoot>@(_HybAny->'%(VsRoot)')</_HybAnyRoot>
+      <_HybAnyRoot Condition="$(_HybAnyRoot.Contains(';'))">$(_HybAnyRoot.Split(';')[0])</_HybAnyRoot>
+      <_HybAnyToolset>@(_HybAny->'%(Toolset)')</_HybAnyToolset>
+      <_HybAnyToolset Condition="$(_HybAnyToolset.Contains(';'))">$(_HybAnyToolset.Split(';')[0])</_HybAnyToolset>
     </PropertyGroup>
 
-    <Error Condition="'$(VcVarsAllBat)' == ''"
-           Text="Visual Studio 2022 or later with C++ tools is required. Please install Visual Studio 2022+ with the 'Desktop development with C++' workload." />
+    <PropertyGroup Condition="'$(_HybUserVcVars)' != 'true' And '$(_HybBestRoot)' != ''">
+      <VcVarsAllBat>$(_HybBestRoot)\VC\Auxiliary\Build\vcvarsall.bat</VcVarsAllBat>
+      <VcVarsVer>$(_HybBestToolset)</VcVarsVer>
+      <VsDetectionSource>$(_HybBestRoot), MSVC $(_HybBestToolset)</VsDetectionSource>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(_HybUserVcVars)' != 'true' And '$(_HybBestRoot)' == '' And '$(_HybAnyRoot)' != '' And '$(HybridizerAllowUnsupportedCompiler)' == 'true'">
+      <VcVarsAllBat>$(_HybAnyRoot)\VC\Auxiliary\Build\vcvarsall.bat</VcVarsAllBat>
+      <VcVarsVer>$(_HybAnyToolset)</VcVarsVer>
+      <VsDetectionSource>$(_HybAnyRoot), MSVC $(_HybAnyToolset) (not supported by this CUDA, HybridizerAllowUnsupportedCompiler=true)</VsDetectionSource>
+      <HybridizerNvccHostFlags>$(HybridizerNvccHostFlags) -allow-unsupported-compiler</HybridizerNvccHostFlags>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(_HybUserVcVars)' == 'true'">
+      <VsDetectionSource>$(VcVarsAllBat) (VcVarsAllBat)</VsDetectionSource>
+      <HybridizerNvccHostFlags Condition="'$(HybridizerAllowUnsupportedCompiler)' == 'true'">$(HybridizerNvccHostFlags) -allow-unsupported-compiler</HybridizerNvccHostFlags>
+    </PropertyGroup>
+
+    <Error Condition="'$(VcVarsAllBat)' == '' And '$(_HybAnyRoot)' == ''"
+           Text="Visual Studio 2022 or later with C++ tools is required. Install Visual Studio 2022 or 2026 with the 'Desktop development with C++' workload." />
+
+    <Error Condition="'$(VcVarsAllBat)' == '' And '$(_HybAnyRoot)' != ''"
+           Text="No installed MSVC toolset is supported by the CUDA toolkit in $(CUDA_PATH): its nvcc needs _MSC_VER below $(_HybMscVerLimit), found toolsets @(_HybCl->'%(Toolset)', ', '). Install Visual Studio 2022 with the 'Desktop development with C++' workload, or add the 'MSVC v143 - VS 2022 C++ x64/x86 build tools' component to Visual Studio 2026, or install a CUDA toolkit that supports MSVC $(_HybAnyToolset). To try anyway, set HybridizerAllowUnsupportedCompiler=true." />
 
     <PropertyGroup>
       <LoadVisualStudio>&quot;$(VcVarsAllBat)&quot; X64</LoadVisualStudio>
+      <LoadVisualStudio Condition="'$(VcVarsVer)' != ''">$(LoadVisualStudio) -vcvars_ver=$(VcVarsVer)</LoadVisualStudio>
     </PropertyGroup>
 
     <Message Text="Visual Studio detected: $(VsDetectionSource)" Importance="High" />
@@ -103,7 +192,7 @@
     <PropertyGroup>
       <NVCCPath Condition="'$(OS)' == 'Windows_NT'">"$(CUDA_PATH)\bin\nvcc"</NVCCPath>
       <NVCCPath Condition="'$(OS)' != 'Windows_NT'">/usr/local/cuda/bin/nvcc</NVCCPath>
-      <BaseCommandLine Condition="'$(OS)' == 'Windows_NT'">$(NVCCPath) -O3 $(GenCodeArg) -std=c++17 -lcuda --expt-relaxed-constexpr -Xcudafe --diag_suppress=144 -Xcudafe --diag_suppress=177 -Xcudafe --diag_suppress=555 -Xcudafe --diag_suppress=128 -I. generated-sources/hybridizer.generated.cpp generated-sources/hybridizer.wrappers.cu -shared -o $(OutDir)$(AssemblyName)_CUDA.dll -lcuda</BaseCommandLine>
+      <BaseCommandLine Condition="'$(OS)' == 'Windows_NT'">$(NVCCPath) -O3 $(GenCodeArg)$(HybridizerNvccHostFlags) -std=c++17 -lcuda --expt-relaxed-constexpr -Xcudafe --diag_suppress=144 -Xcudafe --diag_suppress=177 -Xcudafe --diag_suppress=555 -Xcudafe --diag_suppress=128 -I. generated-sources/hybridizer.generated.cpp generated-sources/hybridizer.wrappers.cu -shared -o $(OutDir)$(AssemblyName)_CUDA.dll -lcuda</BaseCommandLine>
       <BaseCommandLine Condition="'$(OS)' != 'Windows_NT'">$(NVCCPath) -O3 $(GenCodeArg) -std=c++17 -lcuda --expt-relaxed-constexpr -Xcudafe --diag_suppress=144 -Xcudafe --diag_suppress=177 -Xcudafe --diag_suppress=555 -Xcudafe --diag_suppress=128 -I. generated-sources/hybridizer.generated.cpp generated-sources/hybridizer.wrappers.cu -shared -Xcompiler -fPIC -o $(OutDir)$(AssemblyName)_CUDA.dll -lcuda</BaseCommandLine>
       <FullExecCommand Condition="'$(OS)' == 'Windows_NT'">cmd /c &quot;$(LoadVisualStudio) &amp;&amp; $(BaseCommandLine)&quot;</FullExecCommand>
       <FullExecCommand Condition="'$(OS)' != 'Windows_NT'">$(BaseCommandLine)</FullExecCommand>

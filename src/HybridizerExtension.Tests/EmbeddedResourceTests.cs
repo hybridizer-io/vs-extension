@@ -107,6 +107,35 @@ namespace HybridizerExtension.Tests
         }
 
         [Fact]
+        public void DirectoryBuildTargetsTemplate_PicksToolsetAcceptedByNvcc()
+        {
+            // VS 2026's default MSVC (14.5x) is refused by CUDA 13.0's nvcc, so the
+            // template must not just take the newest Visual Studio: it reads nvcc's
+            // limit from host_config.h and loads a toolset under it with -vcvars_ver.
+            string content = ReadResource("HybridizerExtension.Templates.Directory.Build.targets.template");
+            var target = XDocument.Parse(content).Descendants()
+                .Single(e => e.Name.LocalName == "Target" &&
+                             e.Attribute("Name")?.Value == "DetectVisualStudio");
+            string body = target.ToString();
+
+            Assert.Contains(@"include\crt\host_config.h", body);
+            Assert.Contains("-vcvars_ver=$(VcVarsVer)", body);
+            Assert.Contains("HybridizerAllowUnsupportedCompiler", body);
+            Assert.DoesNotContain("$(VsInstallRoot)", body);
+        }
+
+        [Fact]
+        public void DirectoryBuildTargetsTemplate_PassesHostFlagsToNvcc()
+        {
+            string content = ReadResource("HybridizerExtension.Templates.Directory.Build.targets.template");
+            var target = XDocument.Parse(content).Descendants()
+                .Single(e => e.Name.LocalName == "Target" &&
+                             e.Attribute("Name")?.Value == "CompileCUDA");
+
+            Assert.Contains("$(HybridizerNvccHostFlags)", target.ToString());
+        }
+
+        [Fact]
         public void DirectoryBuildTargetsTemplate_ContainsDetectVisualStudioTarget()
         {
             string content = ReadResource("HybridizerExtension.Templates.Directory.Build.targets.template");

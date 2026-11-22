@@ -1,0 +1,62 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: windows-2022   # Visual Studio 2022
+            vs: vs2022
+          - image: windows-2025   # Visual Studio 2026
+            vs: vs2026
+    runs-on: ${{ matrix.image }}
+    name: Build (${{ matrix.vs }})
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Visual Studio on the runner
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          & $vswhere -latest -products * -format text | Select-String '^(displayName|installationVersion|installationPath):'
+
+      - name: Build
+        run: msbuild HybridizerExtension.sln /restore /p:Configuration=Release /p:DeployExtension=false /v:m
+
+      - name: Test
+        run: dotnet test src/HybridizerExtension.Tests/HybridizerExtension.Tests.csproj -c Release --no-build --logger "trx;LogFileName=results.trx"
+
+      # Installs into the experimental instance, so the runner's Visual Studio
+      # checks the manifest's InstallationTarget ranges against its own version.
+      - name: Install the VSIX into Visual Studio
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -products * -format json | ConvertFrom-Json
+          $installer = Join-Path $vs.installationPath 'Common7\IDE\VSIXInstaller.exe'
+          $vsix = Resolve-Path 'src/HybridizerExtension/bin/Release/net472/HybridizerExtension.vsix'
+          $log = Join-Path $env:RUNNER_TEMP 'vsixinstaller.log'
+          $p = Start-Process $installer -Wait -PassThru -ArgumentList '/q', '/rootSuffix:Exp', "/instanceIds:$($vs.instanceId)", "/logFile:$log", "$vsix"
+          Get-Content $log | Select-String 'Hybridizer' | Select-Object -Last 5
+          if ($p.ExitCode -ne 0) { throw "VSIXInstaller failed with exit code $($p.ExitCode)" }
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.vs }}
+          path: src/HybridizerExtension.Tests/TestResults/*.trx
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HybridizerExtension-${{ matrix.vs }}
+          path: src/HybridizerExtension/bin/Release/net472/HybridizerExtension.vsix
