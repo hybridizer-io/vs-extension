@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using HybridizerExtension.Commands;
 using Xunit;
 
@@ -43,9 +44,21 @@ namespace HybridizerExtension.Tests
         }
 
         [Fact]
+        public void AboutCommandId_HasExpectedValue()
+        {
+            Assert.Equal(0x0103, CommandIds.AboutCommandId);
+        }
+
+        [Fact]
         public void CommandIds_AreDistinct()
         {
-            Assert.NotEqual(CommandIds.HybridizeProjectContextCommandId, CommandIds.TelemetrySettingsCommandId);
+            var ids = new[]
+            {
+                CommandIds.HybridizeProjectContextCommandId,
+                CommandIds.TelemetrySettingsCommandId,
+                CommandIds.AboutCommandId,
+            };
+            Assert.Equal(ids.Length, ids.Distinct().Count());
         }
 
         [Fact]

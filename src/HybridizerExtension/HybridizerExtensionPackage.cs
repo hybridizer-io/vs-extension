@@ -2,6 +2,8 @@ using System;
 using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Windows.Interop;
+using HybridizerExtension.About;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -45,12 +47,28 @@ namespace HybridizerExtension
                 var cmdId = new CommandID(CommandIds.CommandSetGuid, CommandIds.TelemetrySettingsCommandId);
                 var menuItem = new MenuCommand(OnTelemetrySettings, cmdId);
                 commandService.AddCommand(menuItem);
+
+                var aboutId = new CommandID(CommandIds.CommandSetGuid, CommandIds.AboutCommandId);
+                commandService.AddCommand(new MenuCommand(OnAbout, aboutId));
             }
         }
 
         private void OnTelemetrySettings(object sender, EventArgs e)
         {
             ShowOptionPage(typeof(TelemetryOptionPage));
+        }
+
+        private void OnAbout(object sender, EventArgs e)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            var window = new AboutWindow();
+            if (GetService(typeof(SVsUIShell)) is IVsUIShell shell &&
+                shell.GetDialogOwnerHwnd(out IntPtr owner) == VSConstants.S_OK)
+            {
+                new WindowInteropHelper(window).Owner = owner;
+            }
+            window.ShowDialog();
         }
 
         private void ShowTelemetryConsentDialog()
