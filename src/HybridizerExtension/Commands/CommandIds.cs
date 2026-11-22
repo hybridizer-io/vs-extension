@@ -12,5 +12,6 @@ namespace HybridizerExtension.Commands
 
         public const int HybridizeProjectContextCommandId = 0x0101;
         public const int TelemetrySettingsCommandId = 0x0102;
+        public const int AboutCommandId = 0x0103;
     }
 }

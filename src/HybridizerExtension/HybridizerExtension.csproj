@@ -50,10 +50,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Resources\Altimesh128x128.png">
+    <Content Include="Resources\Hybridizer128x128.png">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- Shown in the About window, loaded from the assembly -->
+    <Resource Include="Resources\Hybridizer256x256.png" />
   </ItemGroup>
 
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />

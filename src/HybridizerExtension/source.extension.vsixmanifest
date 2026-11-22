@@ -9,7 +9,7 @@
     <DisplayName>Hybridizer</DisplayName>
     <Description xml:space="preserve">Integrates the Hybridizer CUDA code generation toolchain into Visual Studio. Enables converting C# projects into GPU-accelerated applications using NVIDIA CUDA.</Description>
     <MoreInfo>https://hybridizer.net</MoreInfo>
-    <Icon>Resources\Altimesh128x128.png</Icon>
+    <Icon>Resources\Hybridizer128x128.png</Icon>
     <Tags>CUDA, GPU, Hybridizer, HPC, C#, NVIDIA</Tags>
   </Metadata>
   <Installation>

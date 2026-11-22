@@ -39,6 +39,14 @@
         </Strings>
       </Button>
 
+      <!-- About Hybridizer, last in the Hybridizer submenu -->
+      <Button guid="guidCommandSet" id="AboutCommand" priority="0x0200" type="Button">
+        <Parent guid="guidCommandSet" id="HybridizerMenuGroup" />
+        <Strings>
+          <ButtonText>About Hybridizer</ButtonText>
+        </Strings>
+      </Button>
+
       <!-- Hybridize Project command in project context menu only -->
       <Button guid="guidCommandSet" id="HybridizeProjectContextCommand" priority="0x0100" type="Button">
         <Parent guid="guidCommandSet" id="ProjectContextMenuGroup" />
@@ -59,6 +67,7 @@
       <IDSymbol name="ProjectContextMenuGroup" value="0x1040" />
       <IDSymbol name="HybridizeProjectContextCommand" value="0x0101" />
       <IDSymbol name="TelemetrySettingsCommand" value="0x0102" />
+      <IDSymbol name="AboutCommand" value="0x0103" />
     </GuidSymbol>
   </Symbols>
 

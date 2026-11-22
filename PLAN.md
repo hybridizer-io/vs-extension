@@ -18,7 +18,7 @@ vs-extension/
 │       ├── HybridizerExtensionPackage.cs        # Main VS package entry point
 │       ├── Resources/
 │       │   ├── HybridizerExtensionPackage.ico
-│       │   └── Altimesh128x128.png
+│       │   └── Hybridizer128x128.png
 │       ├── Commands/
 │       │   ├── HybridizeProjectCommand.cs       # "Hybridize Project" button
 │       │   └── CommandIds.cs                    # Command GUIDs/IDs
@@ -175,7 +175,7 @@ Menu hierarchy:
 - **Description**: Integrates the Hybridizer CUDA code generation toolchain into Visual Studio
 - **Supported VS**: 17.0+ (VS 2022+)
 - **License**: MIT
-- **Icon**: Altimesh128x128.png
+- **Icon**: Hybridizer128x128.png
 - **Tags**: CUDA, GPU, Hybridizer, HPC, C#
 
 ## 7. Implementation Order
