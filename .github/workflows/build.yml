@@ -45,9 +45,13 @@ jobs:
           $vs = & $vswhere -latest -products * -format json | ConvertFrom-Json
           $installer = Join-Path $vs.installationPath 'Common7\IDE\VSIXInstaller.exe'
           $vsix = Resolve-Path 'src/HybridizerExtension/bin/Release/net472/HybridizerExtension.vsix'
-          $log = Join-Path $env:RUNNER_TEMP 'vsixinstaller.log'
-          $p = Start-Process $installer -Wait -PassThru -ArgumentList '/q', '/rootSuffix:Exp', "/instanceIds:$($vs.instanceId)", "/logFile:$log", "$vsix"
-          Get-Content $log | Select-String 'Hybridizer' | Select-Object -Last 5
+          Write-Host "VSIXInstaller: $installer (instance $($vs.instanceId))"
+          $p = Start-Process $installer -Wait -PassThru -ArgumentList '/q', '/rootSuffix:Exp', "/instanceIds:$($vs.instanceId)", "$vsix"
+          Write-Host "Exit code: $($p.ExitCode)"
+          # VSIXInstaller logs to %TEMP%\dd_VSIXInstaller_*.log
+          Get-ChildItem $env:TEMP -Filter 'dd_VSIXInstaller_*.log' -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTime | Select-Object -Last 1 |
+            ForEach-Object { Get-Content $_.FullName | Select-Object -Last 40 }
           if ($p.ExitCode -ne 0) { throw "VSIXInstaller failed with exit code $($p.ExitCode)" }
 
       - uses: actions/upload-artifact@v4
